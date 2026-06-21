@@ -26,38 +26,3 @@
   margin: 0;
   color: rgba(255, 255, 255, 0.5);
 }
-
-/* Developer credit strip */
-.footer-credit-strip {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.footer-credit-strip__inner {
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.footer-credit-link {
-  display: inline-flex;
-  opacity: 0.25;
-  transition: opacity 0.3s ease;
-}
-
-.footer-credit-link:hover {
-  opacity: 1;
-}
-
-.footer-credit-logo {
-  height: 1.75rem;
-  width: auto;
-  filter: brightness(0) invert(1);
-  transition: filter 0.3s ease;
-}
-
-.footer-credit-link:hover .footer-credit-logo {
-  filter: none;
-}
