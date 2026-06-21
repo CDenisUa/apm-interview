@@ -2,13 +2,20 @@
 
 This project ships a full **Continuous Deployment** pipeline to Azure:
 
-| Part            | Azure service                          | Defined in            |
+| Part            | Service                                | Defined in            |
 | --------------- | -------------------------------------- | --------------------- |
-| Frontend        | **Static Web Apps** (Free)             | `infra/main.bicep`    |
-| Django backend  | **Container Apps** (image from GHCR)   | `infra/main.bicep`    |
-| FastAPI backend | **Container Apps** (image from GHCR)   | `infra/main.bicep`    |
-| Database        | **PostgreSQL Flexible Server**         | `infra/main.bicep`    |
+| Frontend        | Azure **Static Web Apps** (Free)       | `infra/main.bicep`    |
+| Django backend  | Azure **Container Apps** (image from GHCR) | `infra/main.bicep` |
+| FastAPI backend | Azure **Container Apps** (image from GHCR) | `infra/main.bicep` |
+| Database        | **Neon** managed Postgres (`DATABASE_URL`) | external (see note) |
 | Pipeline        | GitHub Actions + **OIDC** (no secrets) | `.github/workflows/cd.yml` |
+
+> **Why Neon and not Azure Database for PostgreSQL?** Azure **free-trial**
+> subscriptions are offer-restricted from provisioning managed PostgreSQL in
+> every region (`LocationIsOfferRestricted`). So the DB runs on **Neon** (free,
+> serverless, can be hosted on Azure infra) and is passed in as a connection
+> string. Compute + frontend stay on Azure. With a Pay-As-You-Go subscription
+> you can switch back to Azure PostgreSQL by adding the resource to the Bicep.
 
 The workflow ([`cd.yml`](../.github/workflows/cd.yml)) runs after CI passes on `main`
 (or manually) and: builds prod images → pushes to GHCR → deploys the Bicep infra →
@@ -71,33 +78,36 @@ echo "AZURE_SUBSCRIPTION_ID=$SUBSCRIPTION_ID"
 
 **Settings → Secrets and variables → Actions → Secrets:**
 
-| Secret                    | Value                                            |
-| ------------------------- | ------------------------------------------------ |
-| `AZURE_CLIENT_ID`         | `APP_ID` from step 1                             |
-| `AZURE_TENANT_ID`         | tenant id from step 1                            |
-| `AZURE_SUBSCRIPTION_ID`   | subscription id from step 1                      |
-| `POSTGRES_ADMIN_PASSWORD` | a strong password (≥ 8 chars, mixed)             |
-| `DJANGO_SECRET_KEY`       | a long random string                             |
+| Secret                  | Value                                              |
+| ----------------------- | -------------------------------------------------- |
+| `AZURE_CLIENT_ID`       | `APP_ID` from step 1                               |
+| `AZURE_TENANT_ID`       | tenant id from step 1                              |
+| `AZURE_SUBSCRIPTION_ID` | subscription id from step 1                        |
+| `DJANGO_SECRET_KEY`     | a long random string                               |
+| `DATABASE_URL`          | Neon connection string `postgresql://user:pass@host/db?sslmode=require` |
+| `GHCR_PAT`              | classic PAT with `read:packages` (Container Apps pull the private images) |
 
 **Settings → Secrets and variables → Actions → Variables:**
 
-| Variable               | Example       |
-| ---------------------- | ------------- |
-| `AZURE_RESOURCE_GROUP` | `bmp-rg`      |
-| `AZURE_LOCATION`       | `westeurope`  |
+| Variable               | Example     |
+| ---------------------- | ----------- |
+| `AZURE_RESOURCE_GROUP` | `bmp-rg`    |
+| `AZURE_LOCATION`       | `eastus2`   |
+
+### Create the Neon database (free, no card)
+
+1. Sign up at <https://neon.tech> (GitHub login).
+2. New Project → pick **Azure** as the cloud + a region → Create.
+3. Copy the **connection string** (`postgresql://…?sslmode=require`) into the
+   `DATABASE_URL` secret above.
 
 ## 3. Run the pipeline
 
 - Push to `main` (CI runs, then CD), **or**
 - **Actions → CD (Azure) → Run workflow** (manual `workflow_dispatch`).
 
-## 4. Make the GHCR images public (one-time, after the first build)
-
-Azure Container Apps pulls the backend images anonymously, so the packages must be public:
-
-**Repo → Packages → `apm-interview-django` / `apm-interview-fastapi` → Package settings → Change visibility → Public.**
-
-Re-run the CD workflow afterwards so the Container Apps can pull successfully.
+The Container Apps pull the **private** GHCR images using `GHCR_PAT`, so the
+packages can stay private — no "make public" step needed.
 
 ## 5. Get the live URLs
 
@@ -120,6 +130,8 @@ az group delete -n bmp-rg --yes --no-wait
 
 - **Static Web Apps Free** — $0, always.
 - **Container Apps** — scale-to-zero + monthly free grant ⇒ ≈ $0 for a light demo.
-- **PostgreSQL Flexible (B1ms)** — covered by the 12-month free offer on a new account;
-  otherwise ~$12–15/mo. **Delete the resource group when you're done demoing.**
+- **Neon Postgres** — free tier, $0 (no card).
 - **GHCR / GitHub Actions** — free for public repos.
+
+So the whole demo is effectively **$0**. Still, run `az group delete -n bmp-rg --yes`
+when you're done to be safe.

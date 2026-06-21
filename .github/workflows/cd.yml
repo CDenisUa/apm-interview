@@ -91,8 +91,6 @@ jobs:
       django_url: ${{ steps.infra.outputs.django_url }}
       fastapi_url: ${{ steps.infra.outputs.fastapi_url }}
       swa_name: ${{ steps.infra.outputs.swa_name }}
-      pg_host: ${{ steps.infra.outputs.pg_host }}
-      pg_name: ${{ steps.infra.outputs.pg_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -117,7 +115,7 @@ jobs:
               -f infra/main.bicep \
               -p djangoImage='${{ needs.setup.outputs.django_image }}' \
                  fastapiImage='${{ needs.setup.outputs.fastapi_image }}' \
-                 postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' \
+                 databaseUrl='${{ secrets.DATABASE_URL }}' \
                  djangoSecretKey='${{ secrets.DJANGO_SECRET_KEY }}' \
                  ghcrUsername='${{ github.actor }}' \
                  ghcrPassword='${{ secrets.GHCR_PAT }}' \
@@ -125,45 +123,24 @@ jobs:
             echo "django_url=$(jq -r '.djangoUrl.value' out.json)" >> "$GITHUB_OUTPUT"
             echo "fastapi_url=$(jq -r '.fastapiUrl.value' out.json)" >> "$GITHUB_OUTPUT"
             echo "swa_name=$(jq -r '.staticWebAppName.value' out.json)" >> "$GITHUB_OUTPUT"
-            echo "pg_host=$(jq -r '.postgresHost.value' out.json)" >> "$GITHUB_OUTPUT"
-            echo "pg_name=$(jq -r '.postgresServerName.value' out.json)" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
-  # Apply the shared schema (db/init.sql) to the Azure database. Idempotent.
-  # A temporary firewall rule is opened for the runner and removed afterwards.
+  # Apply the shared schema (db/init.sql) to the Postgres database. Idempotent,
+  # so it is safe to run on every deploy. The DB (Neon) is publicly reachable
+  # over TLS, so no firewall/VNet juggling is needed.
   # ---------------------------------------------------------------------------
   db-bootstrap:
-    needs: [setup, deploy-infra]
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.setup.outputs.sha }}
 
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Apply init.sql
-        uses: azure/cli@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            set -e
-            RUNNER_IP=$(curl -s https://api.ipify.org)
-            az postgres flexible-server firewall-rule create \
-              -g "$AZURE_RESOURCE_GROUP" -n "${{ needs.deploy-infra.outputs.pg_name }}" \
-              -r gh-runner --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" -o none
-            apt-get update && apt-get install -y postgresql-client >/dev/null
-            PGPASSWORD='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' psql \
-              "host=${{ needs.deploy-infra.outputs.pg_host }} port=5432 dbname=portal user=portal sslmode=require" \
-              -v ON_ERROR_STOP=1 -f db/init.sql
-            az postgres flexible-server firewall-rule delete \
-              -g "$AZURE_RESOURCE_GROUP" -n "${{ needs.deploy-infra.outputs.pg_name }}" \
-              -r gh-runner --yes -o none
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client >/dev/null
+          psql "${{ secrets.DATABASE_URL }}" -v ON_ERROR_STOP=1 -f db/init.sql
 
   # ---------------------------------------------------------------------------
   # Build the frontend (pointing it at the deployed Django URL) and publish it

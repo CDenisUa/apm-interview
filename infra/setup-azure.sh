@@ -50,8 +50,7 @@ echo "==> Granting Contributor on the subscription..."
 az role assignment create --assignee "$APP_ID" --role Contributor \
   --scope "/subscriptions/$SUBSCRIPTION_ID" -o none 2>/dev/null || true
 
-# Suggested strong values for the two app secrets.
-PG_PW="Bmp$(openssl rand -hex 10)!"
+# Suggested strong value for the Django secret key.
 DJ_KEY=$(openssl rand -hex 32)
 
 cat <<EOF
@@ -63,14 +62,19 @@ GitHub → Settings → Secrets and variables → Actions → Secrets
   AZURE_CLIENT_ID          = $APP_ID
   AZURE_TENANT_ID          = $TENANT_ID
   AZURE_SUBSCRIPTION_ID    = $SUBSCRIPTION_ID
-  POSTGRES_ADMIN_PASSWORD  = $PG_PW
   DJANGO_SECRET_KEY        = $DJ_KEY
+  DATABASE_URL             = <Neon Postgres connection string, postgresql://...>
+  GHCR_PAT                 = <classic PAT with read:packages>
 
 GitHub → ... → Variables
   AZURE_RESOURCE_GROUP     = bmp-rg
-  AZURE_LOCATION           = westeurope
+  AZURE_LOCATION           = eastus2
 
 Then: Actions → "CD (Azure)" → Run workflow.
-After the first build, make the GHCR packages public and re-run.
+
+Note: Azure free-trial subscriptions are offer-restricted from provisioning
+Azure Database for PostgreSQL, so the DB is an external managed Postgres
+(Neon, free, https://neon.tech). Compute (Container Apps) + frontend (Static
+Web Apps) still run on Azure.
 ============================================================================
 EOF

@@ -192,8 +192,9 @@ baked into the production image.
   `main` after CI passes: builds prod images → **GHCR**, provisions Azure via
   **Bicep** ([`infra/main.bicep`](infra/main.bicep)), applies the schema, and
   publishes the frontend to **Azure Static Web Apps**. Backends run on **Azure
-  Container Apps**, data on **PostgreSQL Flexible Server**; auth is passwordless
-  **GitHub OIDC**. Setup steps: [`docs/AZURE_CD.md`](docs/AZURE_CD.md).
+  Container Apps**; the database is a managed Postgres (**Neon**, since Azure
+  free-trial blocks managed PostgreSQL); auth is passwordless **GitHub OIDC**.
+  Setup steps: [`docs/AZURE_CD.md`](docs/AZURE_CD.md).
 
 ---
 
