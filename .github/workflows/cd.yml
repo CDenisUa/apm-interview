@@ -123,6 +123,13 @@ jobs:
             echo "django_url=$(jq -r '.djangoUrl.value' out.json)" >> "$GITHUB_OUTPUT"
             echo "fastapi_url=$(jq -r '.fastapiUrl.value' out.json)" >> "$GITHUB_OUTPUT"
             echo "swa_name=$(jq -r '.staticWebAppName.value' out.json)" >> "$GITHUB_OUTPUT"
+            # Restart the active revisions so secret changes (e.g. a rotated DB
+            # password) are picked up even when the image tag is unchanged —
+            # Container Apps don't reload secrets into a running revision.
+            for app in bmp-django bmp-fastapi; do
+              rev=$(az containerapp revision list -n "$app" -g "$AZURE_RESOURCE_GROUP" --query "[?properties.active].name | [0]" -o tsv)
+              az containerapp revision restart -n "$app" -g "$AZURE_RESOURCE_GROUP" --revision "$rev" -o none || true
+            done
 
   # ---------------------------------------------------------------------------
   # Apply the shared schema (db/init.sql) to the Postgres database. Idempotent,
