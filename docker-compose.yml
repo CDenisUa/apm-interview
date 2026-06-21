@@ -1,10 +1,11 @@
 # =============================================================================
-# Business Modernization Portal — backend stack
+# Business Modernization Portal — full stack
 #
-# Three services, one shared database, no port conflicts:
-#   db       -> PostgreSQL  (host 5432)  — single shared schema
-#   django   -> Django API  (host 8001)  — REST (DRF) + GraphQL (strawberry)
-#   fastapi  -> FastAPI API (host 8002)  — REST + GraphQL (strawberry)
+# Four services, one shared database, no port conflicts:
+#   db       -> PostgreSQL   (host 5433) — single shared schema
+#   django   -> Django API   (host 8001) — REST (DRF) + GraphQL (strawberry)
+#   fastapi  -> FastAPI API  (host 8002) — REST + GraphQL (strawberry)
+#   frontend -> React + TS   (host 5173) — Vite dev server
 #
 # Both backends expose an IDENTICAL API contract (see API.md) so the same
 # React components can be pointed at either server.
@@ -51,6 +52,11 @@ services:
     container_name: bmp_fastapi
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-portal}:${POSTGRES_PASSWORD:-portal}@db:5432/${POSTGRES_DB:-portal}
+      # Poll the filesystem for changes — reliable across Docker bind mounts on
+      # macOS/Windows where native inotify events may not propagate.
+      WATCHFILES_FORCE_POLLING: "true"
+    # Override the image CMD to enable auto-reload on code changes (dev only).
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8002:8000"
     depends_on:
@@ -58,6 +64,23 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/fastapi_app:/app
+
+  # React + TypeScript (Vite) dev server. Talks to either backend over the
+  # shared REST + GraphQL contract; defaults to Django (8001).
+  frontend:
+    build: ./frontend
+    container_name: bmp_frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8001}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - django
+      - fastapi
+    volumes:
+      - ./frontend:/app
+      # Keep the image's node_modules (don't let the bind mount shadow them).
+      - /app/node_modules
 
 volumes:
   db_data:

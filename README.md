@@ -1,7 +1,8 @@
-# Business Modernization Portal — Backend
+# Business Modernization Portal
 
-Two interchangeable backends behind **one shared database**, built to demo the
-same React components against either a **Django** or a **FastAPI** server.
+A full local stack — **PostgreSQL + Django + FastAPI + React (Vite)** — wired
+together with Docker Compose. Two interchangeable backends sit behind **one
+shared database** and serve the **same React frontend**.
 
 Both expose an **identical API contract** — the same REST paths, the same
 GraphQL schema, and the same JSON shape — so the frontend never has to care
@@ -14,12 +15,59 @@ which one is running.
 
 ---
 
+## 🚀 Quick start
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+(includes Docker Compose). Nothing else — Python and Node run inside the
+containers.
+
+From the project root, **one command launches everything** — database, both
+backends, and the frontend:
+
+```bash
+make up
+```
+
+(equivalent to `docker compose up --build` if you don't have `make`).
+
+That's it. Once it's running:
+
+| App                | URL                                            |
+| ------------------ | ---------------------------------------------- |
+| **Frontend**       | <http://localhost:5173>                        |
+| **Django** API     | <http://localhost:8001> · docs `/api/docs`     |
+| **FastAPI** API    | <http://localhost:8002> · docs `/docs`         |
+| **PostgreSQL**     | `localhost:5433` (user/pass/db: `portal`)      |
+
+The database seeds itself on first launch (8 business items + 100k todos via
+`db/init.sql`), and **hot reload is on** for all three apps — edit code on your
+machine and the running containers pick it up automatically.
+
+### Everyday commands
+
+```bash
+make up          # build + start the whole stack (foreground, logs visible)
+make up-d        # same, but in the background (detached)
+make logs        # follow logs (one service: make logs s=fastapi)
+make ps          # show service status
+make down        # stop & remove containers (database data is kept)
+make reset       # stop & WIPE the database (init.sql re-seeds next start)
+make test        # run both backend test suites
+make help        # list all targets
+```
+
+> No `make`? Every target maps to a plain Docker Compose command — see the
+> [Makefile](./Makefile). For example `make up` → `docker compose up --build`,
+> `make down` → `docker compose down`.
+
+---
+
 ## Architecture
 
 ```
                          ┌─────────────────────────┐
-                         │   React + TypeScript     │
-                         │   (frontend, added next) │
+                         │  React + TypeScript :5173│
+                         │   (Vite dev server)      │
                          └───────────┬─────────────┘
                                      │  identical REST + GraphQL contract
                  ┌───────────────────┴───────────────────┐
@@ -41,6 +89,7 @@ which one is running.
 
 | Service   | Host port | REST base        | GraphQL    | Interactive docs                 |
 | --------- | --------- | ---------------- | ---------- | -------------------------------- |
+| Frontend  | **5173**  | —                | —          | Vite dev server (React + TS)     |
 | Django    | **8001**  | `/api/items`     | `/graphql` | Swagger `/api/docs` + GraphiQL   |
 | FastAPI   | **8002**  | `/api/items`     | `/graphql` | Swagger `/docs` + GraphiQL       |
 | Postgres  | **5433**  | —                | —          | — (5433→5432 inside)             |
@@ -73,14 +122,9 @@ data layer.
 
 ---
 
-## Run it
+## Smoke-test the backends
 
-```bash
-cp .env.example .env          # optional, sensible defaults are baked in
-docker compose up --build
-```
-
-Then:
+With the stack running (`make up`), both backends answer the same requests:
 
 ```bash
 # Health (note the "service" field differs)
@@ -100,11 +144,9 @@ Two resources are available on both backends:
 - **`/api/items`** — business items (8 rows), filterable.
 - **`/api/todos`** — todos (**100,000 rows**), paginated. See [`API.md`](./API.md).
 
-Stop and reset the database completely:
-
-```bash
-docker compose down -v        # -v drops the volume so init.sql re-seeds
-```
+> **Config is optional.** Sensible defaults are baked into `docker-compose.yml`,
+> so you don't need a `.env` file. To override (DB credentials, or which backend
+> the frontend targets), copy `cp .env.example .env` and edit it.
 
 ---
 
@@ -116,7 +158,13 @@ paths. Tests run against the real Postgres service (so the same dialect as
 production) in a dedicated throwaway database, leaving the shared `portal` data
 untouched.
 
-Start the database first, then run each suite in its container:
+Run both suites with one command:
+
+```bash
+make test                 # or: make test-django / make test-fastapi
+```
+
+Under the hood that starts the database and runs each suite in its container:
 
 ```bash
 docker compose up -d db
@@ -146,7 +194,8 @@ baked into the production image.
 
 ```
 .
-├── docker-compose.yml          # 3 services, shared network
+├── Makefile                    # one-command shortcuts (make up / down / test …)
+├── docker-compose.yml          # 4 services, shared network
 ├── .env.example
 ├── db/
 │   └── init.sql                # single source of truth for the schema + seed
@@ -161,11 +210,28 @@ baked into the production image.
 │       ├── app/                # database, models, schemas, rest, graphql_schema, main
 │       ├── conftest.py         # pytest fixtures (throwaway test DB)
 │       └── tests/              # REST + GraphQL test suites
+├── frontend/                   # React + TypeScript (Vite) — clean dev starter
+│   ├── src/                    # App, consts/api.ts (backend base URL)
+│   ├── Dockerfile              # Vite dev server image
+│   └── vite.config.ts
 ├── API.md
 ├── DATABASE.md
 └── README.md
 ```
 
-> **Status:** backend only. The React/TypeScript frontend
-> (Business Modernization Portal UI) is the next step and will consume this
-> exact contract.
+## Frontend
+
+A clean **React 19 + TypeScript** app scaffolded with **Vite** — the starter
+boilerplate is stripped out, leaving a minimal page ready to build on. The only
+backend coupling lives in [`frontend/src/consts/api.ts`](./frontend/src/consts/api.ts)
+(`API_BASE_URL`), which defaults to Django and is overridable via
+`VITE_API_BASE_URL`.
+
+Run it inside the stack (`docker compose up`) at <http://localhost:5173>, or
+standalone:
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
+```
