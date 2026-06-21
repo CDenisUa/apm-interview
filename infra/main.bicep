@@ -40,6 +40,13 @@ param djangoImage string
 @description('Full GHCR image ref for the FastAPI service.')
 param fastapiImage string
 
+@description('GHCR username (owner of the read:packages token).')
+param ghcrUsername string
+
+@secure()
+@description('GHCR token with read:packages — lets Container Apps pull the private images.')
+param ghcrPassword string
+
 var dbName = 'portal'
 var pgName = toLower('${namePrefix}-pg-${uniqueString(resourceGroup().id)}')
 
@@ -118,9 +125,13 @@ resource djangoApp 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'auto'
         corsPolicy: { allowedOrigins: ['*'], allowedMethods: ['*'], allowedHeaders: ['*'] }
       }
+      registries: [
+        { server: 'ghcr.io', username: ghcrUsername, passwordSecretRef: 'ghcr-password' }
+      ]
       secrets: [
         { name: 'database-url', value: djangoDbUrl }
         { name: 'django-secret-key', value: djangoSecretKey }
+        { name: 'ghcr-password', value: ghcrPassword }
       ]
     }
     template: {
@@ -155,8 +166,12 @@ resource fastapiApp 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'auto'
         corsPolicy: { allowedOrigins: ['*'], allowedMethods: ['*'], allowedHeaders: ['*'] }
       }
+      registries: [
+        { server: 'ghcr.io', username: ghcrUsername, passwordSecretRef: 'ghcr-password' }
+      ]
       secrets: [
         { name: 'database-url', value: fastapiDbUrl }
+        { name: 'ghcr-password', value: ghcrPassword }
       ]
     }
     template: {

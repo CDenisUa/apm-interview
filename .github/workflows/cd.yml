@@ -119,6 +119,8 @@ jobs:
                  fastapiImage='${{ needs.setup.outputs.fastapi_image }}' \
                  postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' \
                  djangoSecretKey='${{ secrets.DJANGO_SECRET_KEY }}' \
+                 ghcrUsername='${{ github.actor }}' \
+                 ghcrPassword='${{ secrets.GHCR_PAT }}' \
               --query properties.outputs -o json > out.json
             echo "django_url=$(jq -r '.djangoUrl.value' out.json)" >> "$GITHUB_OUTPUT"
             echo "fastapi_url=$(jq -r '.fastapiUrl.value' out.json)" >> "$GITHUB_OUTPUT"
