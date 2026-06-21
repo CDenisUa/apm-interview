@@ -1,0 +1,120 @@
+.new-task {
+  max-width: 560px;
+}
+
+.new-task__head {
+  margin-bottom: 1.2rem;
+}
+
+.new-task__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.new-task__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.new-task__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+}
+
+.new-task__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.new-task__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.new-task__input,
+.new-task__textarea,
+.new-task__select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.7rem;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: inherit;
+  width: 100%;
+}
+.new-task__input:focus,
+.new-task__textarea:focus,
+.new-task__select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.new-task__textarea {
+  resize: vertical;
+}
+
+.new-task__row {
+  display: flex;
+  gap: 1rem;
+}
+
+.new-task__error {
+  margin: 0;
+  color: var(--prio-high);
+  font-size: 0.85rem;
+}
+
+.new-task__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.new-task__btn {
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.new-task__btn--ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+.new-task__btn--ghost:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+.new-task__btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+.new-task__btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.new-task__btn--primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 480px) {
+  .new-task__row {
+    flex-direction: column;
+  }
+}

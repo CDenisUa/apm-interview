@@ -1,18 +1,26 @@
+// Core
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 // Components
-import ChepioTechFooter from './components/ChepioTechFooter/ChepioTechFooter'
-// Styles
-import './App.css'
+import AppLayout from './components/AppLayout/AppLayout'
+import ItemsPage from './pages/ItemsPage/ItemsPage'
+import NewTaskPage from './pages/NewTaskPage/NewTaskPage'
+import TodosPage from './pages/TodosPage/TodosPage'
+// Hooks
+import { AuthProvider } from './hooks/useAuth/AuthProvider'
 
-function App() {
+const App = () => {
   return (
-    <div className="app">
-      <main className="app__main">
-        <h1 className="app__title">Business Modernization Portal</h1>
-        <p className="app__subtitle">Frontend is ready for development.</p>
-      </main>
-
-      <ChepioTechFooter />
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route index element={<TodosPage />} />
+            <Route path="items" element={<ItemsPage />} />
+            <Route path="new-task" element={<NewTaskPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

@@ -1,0 +1,117 @@
+.todos-page__head {
+  margin-bottom: 1.1rem;
+}
+
+.todos-page__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.todos-page__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.todos-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.todos-page__search {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.todos-page__search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.todos-page__segment {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.todos-page__seg {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  padding: 0.35rem 0.7rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.todos-page__seg--on {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.todos-page__select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.todos-page__select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.todos-page__error {
+  color: var(--prio-high);
+  font-size: 0.85rem;
+}
+
+.todos-page__loading {
+  color: var(--text-dim);
+}
+
+.todos-page__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.todos-page__pgbtn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.9rem;
+  color: var(--text);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.todos-page__pgbtn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+.todos-page__pgbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.todos-page__pginfo {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+}

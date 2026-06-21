@@ -1,0 +1,126 @@
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.todo-row:last-child {
+  border-bottom: none;
+}
+.todo-row:hover {
+  background: var(--surface-2);
+}
+
+.todo-row__check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.todo-row__check:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.todo-row__check--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.todo-row__check:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.todo-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.todo-row__title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-row--done .todo-row__title {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+
+.todo-row__desc {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-row__prio {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+.todo-row__prio--high {
+  color: var(--prio-high);
+  background: rgba(248, 113, 113, 0.12);
+}
+.todo-row__prio--medium {
+  color: var(--prio-medium);
+  background: rgba(251, 191, 36, 0.12);
+}
+.todo-row__prio--low {
+  color: var(--prio-low);
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.todo-row__due {
+  flex-shrink: 0;
+  width: 96px;
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.todo-row__due--overdue {
+  color: var(--prio-high);
+  font-weight: 600;
+}
+
+.todo-list__empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 560px) {
+  .todo-row__due {
+    display: none;
+  }
+  .todo-row__desc {
+    display: none;
+  }
+}
