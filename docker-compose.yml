@@ -1,0 +1,63 @@
+# =============================================================================
+# Business Modernization Portal — backend stack
+#
+# Three services, one shared database, no port conflicts:
+#   db       -> PostgreSQL  (host 5432)  — single shared schema
+#   django   -> Django API  (host 8001)  — REST (DRF) + GraphQL (strawberry)
+#   fastapi  -> FastAPI API (host 8002)  — REST + GraphQL (strawberry)
+#
+# Both backends expose an IDENTICAL API contract (see API.md) so the same
+# React components can be pointed at either server.
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bmp_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-portal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portal}
+      POSTGRES_DB: ${POSTGRES_DB:-portal}
+    ports:
+      # Host 5433 -> container 5432 (avoids clashing with a local/other Postgres
+      # already bound to host 5432). Services still talk to db:5432 internally.
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Runs ONCE on first init — creates and seeds the shared schema.
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portal} -d ${POSTGRES_DB:-portal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  django:
+    build: ./backend/django_app
+    container_name: bmp_django
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-portal}:${POSTGRES_PASSWORD:-portal}@db:5432/${POSTGRES_DB:-portal}
+      DJANGO_DEBUG: "1"
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/django_app:/app
+
+  fastapi:
+    build: ./backend/fastapi_app
+    container_name: bmp_fastapi
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-portal}:${POSTGRES_PASSWORD:-portal}@db:5432/${POSTGRES_DB:-portal}
+    ports:
+      - "8002:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/fastapi_app:/app
+
+volumes:
+  db_data:
