@@ -1,5 +1,5 @@
 // Components
-import ChepioTechFooter from './components/ChepioTechFooter'
+import ChepioTechFooter from './components/ChepioTechFooter/ChepioTechFooter'
 // Styles
 import './App.css'
 
