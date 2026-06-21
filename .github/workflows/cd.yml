@@ -1,0 +1,207 @@
+name: CD (Azure)
+
+# Runs after the CI workflow succeeds on main, or manually.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write # push images to GHCR
+  id-token: write # Azure OIDC login
+
+concurrency:
+  group: cd-azure
+  cancel-in-progress: false
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Compute shared values (only proceed if CI passed / manual run).
+  # ---------------------------------------------------------------------------
+  setup:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.v.outputs.sha }}
+      django_image: ${{ steps.v.outputs.django_image }}
+      fastapi_image: ${{ steps.v.outputs.fastapi_image }}
+    steps:
+      - id: v
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "django_image=ghcr.io/$OWNER/apm-interview-django:$SHA" >> "$GITHUB_OUTPUT"
+          echo "fastapi_image=ghcr.io/$OWNER/apm-interview-fastapi:$SHA" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Build production images and push them to GHCR.
+  # ---------------------------------------------------------------------------
+  build-images:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: django
+            context: backend/django_app
+          - name: fastapi
+            context: backend/fastapi_app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase owner
+        id: owner
+        run: echo "value=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile.prod
+          push: true
+          tags: |
+            ghcr.io/${{ steps.owner.outputs.value }}/apm-interview-${{ matrix.name }}:${{ needs.setup.outputs.sha }}
+            ghcr.io/${{ steps.owner.outputs.value }}/apm-interview-${{ matrix.name }}:latest
+
+  # ---------------------------------------------------------------------------
+  # Provision / update Azure infrastructure (Bicep) and point the Container
+  # Apps at the freshly pushed images.
+  # ---------------------------------------------------------------------------
+  deploy-infra:
+    needs: [setup, build-images]
+    runs-on: ubuntu-latest
+    outputs:
+      django_url: ${{ steps.infra.outputs.django_url }}
+      fastapi_url: ${{ steps.infra.outputs.fastapi_url }}
+      swa_name: ${{ steps.infra.outputs.swa_name }}
+      pg_host: ${{ steps.infra.outputs.pg_host }}
+      pg_name: ${{ steps.infra.outputs.pg_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep
+        id: infra
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az group create -n "$AZURE_RESOURCE_GROUP" -l "$AZURE_LOCATION" -o none
+            az deployment group create \
+              -g "$AZURE_RESOURCE_GROUP" \
+              -f infra/main.bicep \
+              -p djangoImage='${{ needs.setup.outputs.django_image }}' \
+                 fastapiImage='${{ needs.setup.outputs.fastapi_image }}' \
+                 postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' \
+                 djangoSecretKey='${{ secrets.DJANGO_SECRET_KEY }}' \
+              --query properties.outputs -o json > out.json
+            echo "django_url=$(jq -r '.djangoUrl.value' out.json)" >> "$GITHUB_OUTPUT"
+            echo "fastapi_url=$(jq -r '.fastapiUrl.value' out.json)" >> "$GITHUB_OUTPUT"
+            echo "swa_name=$(jq -r '.staticWebAppName.value' out.json)" >> "$GITHUB_OUTPUT"
+            echo "pg_host=$(jq -r '.postgresHost.value' out.json)" >> "$GITHUB_OUTPUT"
+            echo "pg_name=$(jq -r '.postgresServerName.value' out.json)" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Apply the shared schema (db/init.sql) to the Azure database. Idempotent.
+  # A temporary firewall rule is opened for the runner and removed afterwards.
+  # ---------------------------------------------------------------------------
+  db-bootstrap:
+    needs: [setup, deploy-infra]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Apply init.sql
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            set -e
+            RUNNER_IP=$(curl -s https://api.ipify.org)
+            az postgres flexible-server firewall-rule create \
+              -g "$AZURE_RESOURCE_GROUP" -n "${{ needs.deploy-infra.outputs.pg_name }}" \
+              -r gh-runner --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" -o none
+            apt-get update && apt-get install -y postgresql-client >/dev/null
+            PGPASSWORD='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' psql \
+              "host=${{ needs.deploy-infra.outputs.pg_host }} port=5432 dbname=portal user=portal sslmode=require" \
+              -v ON_ERROR_STOP=1 -f db/init.sql
+            az postgres flexible-server firewall-rule delete \
+              -g "$AZURE_RESOURCE_GROUP" -n "${{ needs.deploy-infra.outputs.pg_name }}" \
+              -r gh-runner --yes -o none
+
+  # ---------------------------------------------------------------------------
+  # Build the frontend (pointing it at the deployed Django URL) and publish it
+  # to Azure Static Web Apps.
+  # ---------------------------------------------------------------------------
+  deploy-frontend:
+    needs: [setup, deploy-infra]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get SWA deployment token
+        id: swa
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            TOKEN=$(az staticwebapp secrets list \
+              -n "${{ needs.deploy-infra.outputs.swa_name }}" \
+              -g "$AZURE_RESOURCE_GROUP" \
+              --query "properties.apiKey" -o tsv)
+            echo "::add-mask::$TOKEN"
+            echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: frontend
+          output_location: dist
+          app_build_command: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ needs.deploy-infra.outputs.django_url }}

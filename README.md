@@ -183,12 +183,28 @@ baked into the production image.
 
 ---
 
+## CI / CD
+
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) — on every push/PR:
+  frontend lint + build, both backend pytest suites (against Postgres), and a
+  docker-compose smoke test.
+- **CD to Azure** ([`.github/workflows/cd.yml`](.github/workflows/cd.yml)) — on
+  `main` after CI passes: builds prod images → **GHCR**, provisions Azure via
+  **Bicep** ([`infra/main.bicep`](infra/main.bicep)), applies the schema, and
+  publishes the frontend to **Azure Static Web Apps**. Backends run on **Azure
+  Container Apps**, data on **PostgreSQL Flexible Server**; auth is passwordless
+  **GitHub OIDC**. Setup steps: [`docs/AZURE_CD.md`](docs/AZURE_CD.md).
+
+---
+
 ## Documentation
 
 - [`API.md`](./API.md) — the shared REST + GraphQL contract, with copy-paste
   `curl` and GraphQL examples for **both** servers.
 - [`DATABASE.md`](./DATABASE.md) — schema, seed data, and the shared-DB /
   no-conflict design explained.
+- [`docs/AZURE_CD.md`](docs/AZURE_CD.md) — Azure deployment runbook (Bicep,
+  Container Apps, Static Web Apps, OIDC).
 
 ## Repo layout
 
@@ -204,16 +220,24 @@ baked into the production image.
 │   │   ├── config/             # settings, urls, wsgi
 │   │   ├── items/              # model (managed=False), serializer, views, graphql
 │   │   ├── todos/              # todos model, serializer, views, graphql
+│   │   ├── Dockerfile          # dev image (runserver)
+│   │   ├── Dockerfile.prod     # prod image (gunicorn)
 │   │   ├── conftest.py         # pytest fixtures (creates unmanaged tables)
 │   │   └── tests/              # REST + GraphQL test suites
 │   └── fastapi_app/            # FastAPI + SQLAlchemy + strawberry GraphQL
 │       ├── app/                # database, models, schemas, rest, graphql_schema, main
+│       ├── Dockerfile          # dev image (uvicorn --reload)
+│       ├── Dockerfile.prod     # prod image (uvicorn workers)
 │       ├── conftest.py         # pytest fixtures (throwaway test DB)
 │       └── tests/              # REST + GraphQL test suites
 ├── frontend/                   # React + TypeScript (Vite) — clean dev starter
 │   ├── src/                    # App, consts/api.ts (backend base URL)
 │   ├── Dockerfile              # Vite dev server image
 │   └── vite.config.ts
+├── infra/
+│   └── main.bicep              # Azure infra (Container Apps, Postgres, SWA)
+├── .github/workflows/          # ci.yml (tests) + cd.yml (Azure deploy)
+├── docs/AZURE_CD.md            # Azure deployment runbook
 ├── API.md
 ├── DATABASE.md
 └── README.md

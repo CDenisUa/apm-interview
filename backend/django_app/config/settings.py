@@ -9,7 +9,7 @@ service needs NO migrations and will not fight FastAPI over the schema.
 # Core
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -54,7 +54,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # --- Database (shared Postgres) ---------------------------------------------
 # DATABASE_URL example: postgresql://portal:portal@db:5432/portal
+# Managed Postgres (e.g. Azure) enforces TLS — pass ?sslmode=require in the URL
+# and it is forwarded to libpq. Local/Docker URLs omit it and stay unaffected.
 _db = urlparse(os.getenv("DATABASE_URL", "postgresql://portal:portal@db:5432/portal"))
+_db_options = {}
+_sslmode = parse_qs(_db.query).get("sslmode", [None])[0]
+if _sslmode:
+    _db_options["sslmode"] = _sslmode
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -63,6 +69,7 @@ DATABASES = {
         "PASSWORD": _db.password,
         "HOST": _db.hostname,
         "PORT": _db.port or 5432,
+        "OPTIONS": _db_options,
     }
 }
 
