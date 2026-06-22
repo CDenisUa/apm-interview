@@ -3,17 +3,24 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 // Components
 import App from './App.tsx'
+// Services
+import i18n from './i18n/i18n'
 // Styles
 import './index.css'
+// Consts
+import { STORAGE_KEYS } from './consts/storage'
 
-const APP_TITLE = 'Business Modernization Portal'
-const LEGACY_CACHE_CLEANUP_KEY = 'bmp:legacy-browser-cache-cleared'
+const syncDocumentTitle = () => {
+  document.title = i18n.t('app.title')
+  document.documentElement.lang = i18n.language
+}
 
-document.title = APP_TITLE
+syncDocumentTitle()
+i18n.on('languageChanged', syncDocumentTitle)
 
-async function clearLegacyBrowserCache() {
+const clearLegacyBrowserCache = async () => {
   try {
-    if (localStorage.getItem(LEGACY_CACHE_CLEANUP_KEY)) return
+    if (localStorage.getItem(STORAGE_KEYS.legacyCacheCleared)) return
 
     const hadServiceWorkerController = Boolean(navigator.serviceWorker?.controller)
     const registrations = navigator.serviceWorker
@@ -26,7 +33,7 @@ async function clearLegacyBrowserCache() {
       ...cacheNames.map((cacheName) => caches.delete(cacheName)),
     ])
 
-    localStorage.setItem(LEGACY_CACHE_CLEANUP_KEY, 'true')
+    localStorage.setItem(STORAGE_KEYS.legacyCacheCleared, 'true')
 
     // A page stays controlled until reload even after its old worker is removed.
     if (hadServiceWorkerController) window.location.reload()

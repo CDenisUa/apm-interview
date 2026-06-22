@@ -186,8 +186,8 @@ baked into the production image.
 ## CI / CD
 
 - **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) — on every push/PR:
-  frontend lint + build, both backend pytest suites (against Postgres), and a
-  docker-compose smoke test.
+  frontend lint + Vitest tests + build, both backend pytest suites (against
+  Postgres), and a docker-compose smoke test.
 - **CD to Azure** ([`.github/workflows/cd.yml`](.github/workflows/cd.yml)) — on
   `main` after CI passes: builds prod images → **GHCR**, provisions Azure via
   **Bicep** ([`infra/main.bicep`](infra/main.bicep)), applies the schema, and

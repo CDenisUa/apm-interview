@@ -6,12 +6,12 @@ import { AuthContext } from './useAuth'
 import type { AuthContextValue } from './useAuth'
 // Types
 import type { User } from '../../types/user'
-
-const STORAGE_KEY = 'bmp:user'
+// Consts
+import { STORAGE_KEYS } from '../../consts/storage'
 
 const readStored = (): User | null => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEYS.user)
     return raw ? (JSON.parse(raw) as User) : null
   } catch {
     return null
@@ -25,8 +25,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => readStored())
 
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    else localStorage.removeItem(STORAGE_KEY)
+    if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user))
+    else localStorage.removeItem(STORAGE_KEYS.user)
   }, [user])
 
   const value = useMemo<AuthContextValue>(

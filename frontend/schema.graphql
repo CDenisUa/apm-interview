@@ -1,0 +1,96 @@
+"""
+GraphQL schema for the Business Modernization Portal backend.
+
+Single contract shared by both backends (Django + FastAPI / strawberry).
+This file is the source of truth for GraphQL Code Generator. Refresh it from a
+running server with `npm run schema:pull` whenever the backend contract changes.
+"""
+
+type BusinessItem {
+  id: ID!
+  name: String!
+  country: String!
+  status: String!
+  revenue: Float!
+  updatedAt: String!
+  owner: String!
+}
+
+input BusinessItemInput {
+  name: String!
+  country: String!
+  status: String!
+  revenue: Float!
+  owner: String!
+}
+
+type Todo {
+  id: ID!
+  title: String!
+  description: String!
+  completed: Boolean!
+  priority: String!
+  dueDate: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TodoPage {
+  items: [Todo!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+input TodoInput {
+  title: String!
+  description: String! = ""
+  completed: Boolean! = false
+  priority: String! = "medium"
+  dueDate: String = null
+}
+
+type PriorityCounts {
+  low: Int!
+  medium: Int!
+  high: Int!
+}
+
+type TodoStats {
+  total: Int!
+  active: Int!
+  completed: Int!
+  overdue: Int!
+  byPriority: PriorityCounts!
+}
+
+type Query {
+  items(country: String, status: String, search: String): [BusinessItem!]!
+  item(id: ID!): BusinessItem
+  todos(
+    page: Int! = 1
+    pageSize: Int! = 20
+    completed: Boolean
+    priority: String
+    search: String
+    overdue: Boolean
+    sortBy: String! = "createdAt"
+    order: String! = "asc"
+  ): TodoPage!
+  todo(id: ID!): Todo
+  todoStats: TodoStats!
+}
+
+type Mutation {
+  createItem(input: BusinessItemInput!): BusinessItem!
+  updateItem(id: ID!, input: BusinessItemInput!): BusinessItem
+  deleteItem(id: ID!): Boolean!
+  createTodo(input: TodoInput!): Todo!
+  updateTodo(id: ID!, input: TodoInput!): Todo
+  toggleTodo(id: ID!): Todo
+  deleteTodo(id: ID!): Boolean!
+  markAll(completed: Boolean! = true): Int!
+  clearCompleted: Int!
+  bulkDeleteTodos(ids: [ID!]!): Int!
+}

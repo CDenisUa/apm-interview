@@ -1,0 +1,11 @@
+query Items($country: String, $status: String, $search: String) {
+  items(country: $country, status: $status, search: $search) {
+    id
+    name
+    country
+    status
+    revenue
+    owner
+    updatedAt
+  }
+}

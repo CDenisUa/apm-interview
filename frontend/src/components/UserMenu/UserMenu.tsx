@@ -1,5 +1,6 @@
 // Core
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 // Hooks
 import { useAuth } from '../../hooks/useAuth/useAuth'
 // Styles
@@ -11,6 +12,7 @@ const initials = (name: string): string => {
 }
 
 const UserMenu = () => {
+  const { t } = useTranslation()
   const { user, login, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -19,11 +21,11 @@ const UserMenu = () => {
     return (
       <div className="user-menu">
         <button className="user-menu__signin" onClick={() => setOpen((o) => !o)}>
-          Sign in
+          {t('userMenu.signIn')}
         </button>
         {open && (
           <div className="user-menu__pop user-menu__pop--right">
-            <span className="user-menu__label">Sign in as</span>
+            <span className="user-menu__label">{t('userMenu.signInAs')}</span>
             <form
               className="user-menu__form"
               onSubmit={(e) => {
@@ -37,16 +39,16 @@ const UserMenu = () => {
             >
               <input
                 className="user-menu__input"
-                placeholder="Your name"
+                placeholder={t('userMenu.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
               />
               <button type="submit" className="user-menu__continue">
-                Continue
+                {t('userMenu.continue')}
               </button>
             </form>
-            <p className="user-menu__hint">Optional — the app works signed out too.</p>
+            <p className="user-menu__hint">{t('userMenu.hint')}</p>
           </div>
         )}
       </div>
@@ -75,7 +77,7 @@ const UserMenu = () => {
               setOpen(false)
             }}
           >
-            Sign out
+            {t('userMenu.signOut')}
           </button>
         </div>
       )}

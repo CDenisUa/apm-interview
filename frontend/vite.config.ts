@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 // Core
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -13,5 +14,13 @@ export default defineConfig({
       // Polling makes HMR reliable when the source is a mounted Docker volume.
       usePolling: true,
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+    css: false,
+    restoreMocks: true,
+    unstubGlobals: true,
   },
 })

@@ -1,0 +1,42 @@
+query Todos(
+  $page: Int!
+  $pageSize: Int!
+  $completed: Boolean
+  $priority: String
+  $search: String
+  $sortBy: String!
+  $order: String!
+) {
+  todos(
+    page: $page
+    pageSize: $pageSize
+    completed: $completed
+    priority: $priority
+    search: $search
+    sortBy: $sortBy
+    order: $order
+  ) {
+    items {
+      id
+      title
+      description
+      completed
+      priority
+      dueDate
+      createdAt
+      updatedAt
+    }
+    total
+    page
+    pageSize
+    totalPages
+  }
+}
+
+mutation ToggleTodo($id: ID!) {
+  toggleTodo(id: $id) {
+    id
+    completed
+    updatedAt
+  }
+}

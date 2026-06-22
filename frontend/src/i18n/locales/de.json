@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Portal zur Geschäftsmodernisierung"
+  },
+  "nav": {
+    "todos": "Aufgaben",
+    "newTask": "Neue Aufgabe",
+    "items": "Geschäftsobjekte"
+  },
+  "language": {
+    "label": "Sprache",
+    "en": "Englisch",
+    "de": "Deutsch"
+  },
+  "userMenu": {
+    "signIn": "Anmelden",
+    "signInAs": "Anmelden als",
+    "namePlaceholder": "Ihr Name",
+    "continue": "Weiter",
+    "hint": "Optional — die App funktioniert auch abgemeldet.",
+    "signOut": "Abmelden"
+  },
+  "todos": {
+    "title": "Aufgaben",
+    "welcomeBack": "Willkommen zurück, {{name}}. ",
+    "count": "{{count}} Einträge",
+    "loading": "Wird geladen…",
+    "searchPlaceholder": "Titel oder Beschreibung suchen…",
+    "status": {
+      "all": "alle",
+      "active": "aktiv",
+      "completed": "erledigt"
+    },
+    "priority": {
+      "all": "Alle Prioritäten",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    },
+    "error": "Aufgaben konnten nicht geladen werden: {{message}}",
+    "empty": "Keine Aufgaben entsprechen diesen Filtern.",
+    "markActive": "Als aktiv markieren",
+    "markCompleted": "Als erledigt markieren",
+    "prev": "← Zurück",
+    "next": "Weiter →",
+    "pageInfo": "Seite {{page}} von {{total}}"
+  },
+  "items": {
+    "title": "Geschäftsobjekte",
+    "count_one": "{{count}} Eintrag",
+    "count_other": "{{count}} Einträge",
+    "loading": "Wird geladen…",
+    "searchPlaceholder": "Nach Name suchen…",
+    "allCountries": "Alle Länder",
+    "allStatuses": "Alle Status",
+    "status": {
+      "active": "aktiv",
+      "pending": "ausstehend",
+      "inactive": "inaktiv"
+    },
+    "error": "Objekte konnten nicht geladen werden: {{message}}",
+    "empty": "Keine Objekte entsprechen diesen Filtern.",
+    "table": {
+      "name": "Name",
+      "country": "Land",
+      "status": "Status",
+      "revenue": "Umsatz",
+      "owner": "Inhaber"
+    }
+  },
+  "newTask": {
+    "title": "Seite „Neue Aufgabe“"
+  }
+}

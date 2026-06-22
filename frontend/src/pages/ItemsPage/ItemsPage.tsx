@@ -1,26 +1,30 @@
 // Core
 import { useMemo, useState } from 'react'
-// Hooks
-import { useItems } from '../../hooks/useItems/useItems'
+import { useTranslation } from 'react-i18next'
 // Services
-import type { ItemsQuery } from '../../services/itemsApi'
+import { useItemsQuery } from '../../gql/generated'
 // Types
+import type { ItemsQueryVariables } from '../../gql/generated'
 import type { Country, ItemStatus } from '../../types/item'
 // Styles
 import './ItemsPage.css'
 
-const money = new Intl.NumberFormat(undefined, {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-})
-
 const ItemsPage = () => {
+  const { t, i18n } = useTranslation()
+  const money = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language],
+  )
   const [search, setSearch] = useState('')
   const [country, setCountry] = useState<Country | ''>('')
   const [status, setStatus] = useState<ItemStatus | ''>('')
 
-  const query = useMemo<ItemsQuery>(
+  const variables = useMemo<ItemsQueryVariables>(
     () => ({
       search: search || undefined,
       country: country || undefined,
@@ -29,21 +33,22 @@ const ItemsPage = () => {
     [search, country, status],
   )
 
-  const { data, loading, error } = useItems(query)
+  const { data, loading, error } = useItemsQuery({ variables })
+  const items = data?.items
 
   return (
     <div className="items-page">
       <header className="items-page__head">
-        <h1 className="items-page__title">Business Items</h1>
+        <h1 className="items-page__title">{t('items.title')}</h1>
         <p className="items-page__sub">
-          {data ? `${data.length} item${data.length === 1 ? '' : 's'}` : 'Loading…'}
+          {items ? t('items.count', { count: items.length }) : t('items.loading')}
         </p>
       </header>
 
       <div className="items-page__filters">
         <input
           className="items-page__search"
-          placeholder="Search by name…"
+          placeholder={t('items.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -52,7 +57,7 @@ const ItemsPage = () => {
           value={country}
           onChange={(e) => setCountry(e.target.value as Country | '')}
         >
-          <option value="">All countries</option>
+          <option value="">{t('items.allCountries')}</option>
           <option value="AT">AT</option>
           <option value="DE">DE</option>
           <option value="US">US</option>
@@ -63,41 +68,43 @@ const ItemsPage = () => {
           value={status}
           onChange={(e) => setStatus(e.target.value as ItemStatus | '')}
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="pending">Pending</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{t('items.allStatuses')}</option>
+          <option value="active">{t('items.status.active')}</option>
+          <option value="pending">{t('items.status.pending')}</option>
+          <option value="inactive">{t('items.status.inactive')}</option>
         </select>
       </div>
 
-      {error && <p className="items-page__error">Couldn’t load items: {error}</p>}
+      {error && (
+        <p className="items-page__error">{t('items.error', { message: error.message })}</p>
+      )}
 
-      {loading && !data ? (
-        <p className="items-page__loading">Loading…</p>
+      {loading && !items ? (
+        <p className="items-page__loading">{t('items.loading')}</p>
       ) : (
-        data &&
-        (data.length === 0 ? (
-          <p className="items-page__empty">No items match these filters.</p>
+        items &&
+        (items.length === 0 ? (
+          <p className="items-page__empty">{t('items.empty')}</p>
         ) : (
           <div className="items-page__table-wrap">
             <table className="items-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Country</th>
-                  <th>Status</th>
-                  <th className="items-table__num">Revenue</th>
-                  <th>Owner</th>
+                  <th>{t('items.table.name')}</th>
+                  <th>{t('items.table.country')}</th>
+                  <th>{t('items.table.status')}</th>
+                  <th className="items-table__num">{t('items.table.revenue')}</th>
+                  <th>{t('items.table.owner')}</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((item) => (
+                {items.map((item) => (
                   <tr key={item.id}>
                     <td className="items-table__name">{item.name}</td>
                     <td>{item.country}</td>
                     <td>
                       <span className={`items-table__status items-table__status--${item.status}`}>
-                        {item.status}
+                        {t(`items.status.${item.status}`)}
                       </span>
                     </td>
                     <td className="items-table__num">{money.format(item.revenue)}</td>

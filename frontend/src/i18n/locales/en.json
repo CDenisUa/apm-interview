@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Business Modernization Portal"
+  },
+  "nav": {
+    "todos": "Todos",
+    "newTask": "New task",
+    "items": "Business Items"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "de": "German"
+  },
+  "userMenu": {
+    "signIn": "Sign in",
+    "signInAs": "Sign in as",
+    "namePlaceholder": "Your name",
+    "continue": "Continue",
+    "hint": "Optional — the app works signed out too.",
+    "signOut": "Sign out"
+  },
+  "todos": {
+    "title": "Todos",
+    "welcomeBack": "Welcome back, {{name}}. ",
+    "count": "{{count}} items",
+    "loading": "Loading…",
+    "searchPlaceholder": "Search title or description…",
+    "status": {
+      "all": "all",
+      "active": "active",
+      "completed": "completed"
+    },
+    "priority": {
+      "all": "All priorities",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "error": "Couldn’t load todos: {{message}}",
+    "empty": "No todos match these filters.",
+    "markActive": "Mark as active",
+    "markCompleted": "Mark as completed",
+    "prev": "← Prev",
+    "next": "Next →",
+    "pageInfo": "Page {{page}} of {{total}}"
+  },
+  "items": {
+    "title": "Business Items",
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} items",
+    "loading": "Loading…",
+    "searchPlaceholder": "Search by name…",
+    "allCountries": "All countries",
+    "allStatuses": "All statuses",
+    "status": {
+      "active": "active",
+      "pending": "pending",
+      "inactive": "inactive"
+    },
+    "error": "Couldn’t load items: {{message}}",
+    "empty": "No items match these filters.",
+    "table": {
+      "name": "Name",
+      "country": "Country",
+      "status": "Status",
+      "revenue": "Revenue",
+      "owner": "Owner"
+    }
+  },
+  "newTask": {
+    "title": "New Task Page"
+  }
+}

@@ -1,5 +1,6 @@
 // Core
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 // Styles
 import './Sidebar.css'
 // Consts
@@ -7,17 +8,19 @@ import { ROUTES } from '../../consts/routes'
 
 interface NavItem {
   to: string
-  label: string
+  labelKey: string
   icon: string
 }
 
 const NAV: NavItem[] = [
-  { to: ROUTES.todos, label: 'Todos', icon: '☑' },
-  { to: ROUTES.newTask, label: 'New task', icon: '+' },
-  { to: ROUTES.items, label: 'Business Items', icon: '▦' },
+  { to: ROUTES.todos, labelKey: 'nav.todos', icon: '☑' },
+  { to: ROUTES.newTask, labelKey: 'nav.newTask', icon: '+' },
+  { to: ROUTES.items, labelKey: 'nav.items', icon: '▦' },
 ]
 
 const Sidebar = () => {
+  const { t } = useTranslation()
+
   return (
     <aside className="sidebar">
       <nav className="sidebar__nav">
@@ -33,7 +36,7 @@ const Sidebar = () => {
             <span className="sidebar__icon" aria-hidden="true">
               {item.icon}
             </span>
-            {item.label}
+            {t(item.labelKey)}
           </NavLink>
         ))}
       </nav>

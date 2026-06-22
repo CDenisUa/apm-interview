@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm run test # vitest run
+
       - name: Type-check & build
         run: npm run build # `tsc -b && vite build`
 

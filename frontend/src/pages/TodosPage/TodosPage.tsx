@@ -1,5 +1,6 @@
 // Core
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 // Components
 import TodoList from '../../components/TodoList/TodoList'
 // Hooks
@@ -16,6 +17,7 @@ const PAGE_SIZE = 10
 type StatusFilter = 'all' | 'active' | 'completed'
 
 const TodosPage = () => {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -66,10 +68,12 @@ const TodosPage = () => {
     <div className="todos-page">
       <header className="todos-page__head">
         <div>
-          <h1 className="todos-page__title">Todos</h1>
+          <h1 className="todos-page__title">{t('todos.title')}</h1>
           <p className="todos-page__sub">
-            {user ? `Welcome back, ${user.name}. ` : ''}
-            {data ? `${data.total.toLocaleString()} items` : 'Loading…'}
+            {user ? t('todos.welcomeBack', { name: user.name }) : ''}
+            {data
+              ? t('todos.count', { count: data.total })
+              : t('todos.loading')}
           </p>
         </div>
       </header>
@@ -77,7 +81,7 @@ const TodosPage = () => {
       <div className="todos-page__filters">
         <input
           className="todos-page__search"
-          placeholder="Search title or description…"
+          placeholder={t('todos.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -91,7 +95,7 @@ const TodosPage = () => {
                 setPage(1)
               }}
             >
-              {s}
+              {t(`todos.status.${s}`)}
             </button>
           ))}
         </div>
@@ -103,17 +107,19 @@ const TodosPage = () => {
             setPage(1)
           }}
         >
-          <option value="">All priorities</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
+          <option value="">{t('todos.priority.all')}</option>
+          <option value="high">{t('todos.priority.high')}</option>
+          <option value="medium">{t('todos.priority.medium')}</option>
+          <option value="low">{t('todos.priority.low')}</option>
         </select>
       </div>
 
-      {error && <p className="todos-page__error">Couldn’t load todos: {error}</p>}
+      {error && (
+        <p className="todos-page__error">{t('todos.error', { message: error })}</p>
+      )}
 
       {loading && !data ? (
-        <p className="todos-page__loading">Loading…</p>
+        <p className="todos-page__loading">{t('todos.loading')}</p>
       ) : (
         data && (
           <>
@@ -124,17 +130,20 @@ const TodosPage = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                ← Prev
+                {t('todos.prev')}
               </button>
               <span className="todos-page__pginfo">
-                Page {data.page} of {Math.max(totalPages, 1)}
+                {t('todos.pageInfo', {
+                  page: data.page,
+                  total: Math.max(totalPages, 1),
+                })}
               </span>
               <button
                 className="todos-page__pgbtn"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next →
+                {t('todos.next')}
               </button>
             </div>
           </>

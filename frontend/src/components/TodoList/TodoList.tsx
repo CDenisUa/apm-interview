@@ -1,3 +1,5 @@
+// Core
+import { useTranslation } from 'react-i18next'
 // Types
 import type { Todo } from '../../types/todo'
 // Styles
@@ -9,9 +11,9 @@ interface TodoListProps {
   busyId: string | null
 }
 
-const formatDate = (value: string | null): string => {
+const formatDate = (value: string | null, locale: string): string => {
   if (!value) return '—'
-  return new Date(value).toLocaleDateString(undefined, {
+  return new Date(value).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -22,8 +24,10 @@ const isOverdue = (todo: Todo): boolean =>
   !todo.completed && todo.dueDate !== null && new Date(todo.dueDate) < new Date()
 
 const TodoList = ({ todos, onToggle, busyId }: TodoListProps) => {
+  const { t, i18n } = useTranslation()
+
   if (todos.length === 0) {
-    return <p className="todo-list__empty">No todos match these filters.</p>
+    return <p className="todo-list__empty">{t('todos.empty')}</p>
   }
 
   return (
@@ -37,7 +41,7 @@ const TodoList = ({ todos, onToggle, busyId }: TodoListProps) => {
             className={`todo-row__check${todo.completed ? ' todo-row__check--on' : ''}`}
             onClick={() => onToggle(todo.id)}
             disabled={busyId === todo.id}
-            aria-label={todo.completed ? 'Mark as active' : 'Mark as completed'}
+            aria-label={t(todo.completed ? 'todos.markActive' : 'todos.markCompleted')}
           >
             {todo.completed ? '✓' : ''}
           </button>
@@ -50,13 +54,13 @@ const TodoList = ({ todos, onToggle, busyId }: TodoListProps) => {
           </div>
 
           <span className={`todo-row__prio todo-row__prio--${todo.priority}`}>
-            {todo.priority}
+            {t(`todos.priority.${todo.priority}`)}
           </span>
 
           <span
             className={`todo-row__due${isOverdue(todo) ? ' todo-row__due--overdue' : ''}`}
           >
-            {formatDate(todo.dueDate)}
+            {formatDate(todo.dueDate, i18n.language)}
           </span>
         </li>
       ))}
